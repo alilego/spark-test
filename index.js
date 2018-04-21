@@ -9,6 +9,7 @@ mongoose.connect("mongodb://localhost/spark_match");
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
+app.use(express.static(__dirname + "/public"));
 
 // SCHEMA SETUP
 var userSchema = new mongoose.Schema({
@@ -29,6 +30,17 @@ var userSchema = new mongoose.Schema({
 });
 
 var User = mongoose.model("User", userSchema);
+
+//assumption: this is the logged in user
+var currentUser = {
+    name: "Vladimir",
+    "city": {
+        "name": "London",
+        "lat": 51.509865,
+        "lon": -0.118092
+      },
+    "religion": "Christian"  
+}
 
 //Use this to initialize DB with test data
 //DB.initUsers(User, log);

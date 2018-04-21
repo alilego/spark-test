@@ -1,23 +1,130 @@
 <% include partials/header %>
- <div class="container">
-     <header class="jumbotron">
-         <div class="container">
-             <h1>Matching users!</h1>
-             <p>View your best matches</p>
-         </div>
-     </header>
+<div class="container">
+    <script>
+        $(function() {
+            $("#compatibilityScoreRange").slider({
+                range: true,
+                min: 1,
+                max: 99,
+                values: [50, 99],
+                slide: function(event, ui) {
+                    $("#compatibilityScore").val(ui.values[0] + "% - " + ui.values[1] + "%");
+                }
+            });
+            $("#compatibilityScore").val($("#compatibilityScoreRange").slider("values", 0) + "% - " + $("#compatibilityScoreRange").slider("values", 1) + "%");
+        });
+        $(function() {
+            $("#ageRange").slider({
+                range: true,
+                min: 18,
+                max: 96,
+                values: [18, 40],
+                slide: function(event, ui) {
+                    var maxValue = ui.values[1] > 95 ? "95+" : ui.values[1];
+                    $("#age").val(ui.values[0] + " - " + maxValue);
+                }
+            });
+            $("#age").val($("#ageRange").slider("values", 0) + " - " + $("#ageRange").slider("values", 1));
+        });
+        $(function() {
+            $("#heightRange").slider({
+                range: true,
+                min: 135,
+                max: 211,
+                values: [155, 175],
+                slide: function(event, ui) {
+                    var maxValue = ui.values[1] > 210 ? "210+ " : ui.values[1];
+                    $("#height").val(ui.values[0] + "cm - " + maxValue + "cm");
+                }
+            });
+            $("#height").val($("#heightRange").slider("values", 0) + "cm - " + $("#heightRange").slider("values", 1) + "cm");
+        });
+        $(function() {
+            $("#distanceMax").slider({
+                range: "min",
+                value: 100,
+                min: 30,
+                max: 301,
+                slide: function(event, ui) {
+                    var value = ui.value > 300 ? ">300" : ui.value;
+                    $("#distance").val(value + " km");
+                }
+            });
+            $("#distance").val($("#distanceMax").slider("value") + " km");
+        });
+    </script>
+    
+    <header class="jumbotron">
+        <div class="container">
+            <p>Get your best matches!</p>
+            <form action="/" method="POST">
+                <div class="row" style="display:flex; flex-wrap: wrap;">
+                    <div class="col-sm-4 col-xs-12">
+                        <div class="form-group">
+                            <button class="btn btn-lg btn-primary btn-block">Filter!</button>
+                        </div>
+                        
+                        <div class="checkbox">
+                            <input type="checkbox" class="form-check-input" id="hasPhoto">
+                            <label class="form-check-label" for="exampleCheck1">Has photo</label>
+                        </div>
+                        <div class="checkbox">
+                            <input type="checkbox" class="form-check-input" id="inContact">
+                            <label class="form-check-label" for="exampleCheck1">In contact</label>
+                        </div>
+                        <div class="checkbox">
+                            <input type="checkbox" class="form-check-input" id="favourite">
+                            <label class="form-check-label" for="exampleCheck1">Favourite</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-8 col-xs-12">
+                        <div class="form-group">
+                            <label for="compatibilityScore">Compatibility score:</label>
+                            <input class="sliderInput" type="text" id="compatibilityScore" readonly>
+                            <div id="compatibilityScoreRange"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="age">Age:</label>
+                            <input class="sliderInput" type="text" id="age" readonly>
+                            <div id="ageRange"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="height">Height:</label>
+                            <input class="sliderInput" type="text" id="height" readonly>
+                            <div id="heightRange"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="distance">Maximum distance:</label>
+                            <input class="sliderInput" type="text" id="distance" readonly>
+                            <div id="distanceMax"></div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            
+        </div>
+    </header>
      
-     <div class="row text-center" style="display:flex; flex-wrap: wrap;">
+    <div class="row text-center" style="display:flex; flex-wrap: wrap;">
         <% users.forEach(function(user){ %>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12 profile">
                 <div class="thumbnail">
-                   <img src="<%= user.main_photo %>">
-                   <div class="caption">
-                       <h4><%= user.display_name %></h4>
-                   </div>
-                   <p>
-                       <a href="/users/<%= user._id %>" class="btn btn-primary">More details</a>
-                   </p>
+                    <div class="img-box text-center">
+                        <% if (user.main_photo) { %>
+                            <img src="<%= user.main_photo %>" class="img-responsive">
+                        <% } else { %>
+                            <img src="/images/no_photo.jpg" class="img-responsive">
+                        <% } %>
+                        <ul class="text-center">
+                            <a href="/users/<%= user._id %>"><li><i class="glyphicon glyphicon-user"></i></li></a>
+                            <a href="#"><li><i class="glyphicon glyphicon-heart"></i></li></a>
+                            <a href="#"><li><i class="glyphicon glyphicon-envelope"></i></li></a>
+                        </ul>
+                    </div>
+                    <h1><%= user.display_name %>, <%= user.age %></h1>
+                    <h2><%= user.religion %></h2>
+                    <h2><%= user.job_title %> - <%= user.city.name %></h2>
+                    <p>Match: <%= user.compatibility_score * 100 %>%</p>
                 </div>
             </div>
         <% }); %>
