@@ -2,8 +2,10 @@
 exports.initUsers = function (User, log){
     var users = require('../filtering_matches/database/matches.json');
     for (var i = 0, len = users.matches.length; i < len; i++) {
-        log.debug(users.matches[i]);
-        User.create(users.matches[i], function(err, user){
+        var user = users.matches[i];
+        user.geo = [users.matches[i].city.lon, users.matches[i].city.lat];
+        log.debug(user);
+        User.create(user, function(err, user){
             if(err){
                 log.error("ERROR while ADDING NEW USER:");
                 log.error(user);
@@ -14,4 +16,15 @@ exports.initUsers = function (User, log){
             }
         });
     }
+}
+
+//Remove all users from local DB
+exports.clearAllUsers = function (User, log){
+    User.remove({}, function(err){
+        if(err){
+            log.error(err);
+        } else {
+            log.info("REMOVED ALL USERS!");
+        }
+    });
 }

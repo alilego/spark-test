@@ -1,14 +1,48 @@
 <% include partials/header %>
 <div class="container">
     <script>
+        const DEF_DISTANCE = 100;
+        const DEF_MIN_SCORE = 50;
+        const DEF_MAX_SCORE = 99;
+        const DEF_MIN_AGE = 18;
+        const DEF_MAX_AGE = 45;
+        const DEF_MIN_HEIGHT = 145;
+        const DEF_MAX_HEIGHT = 175;
+        
+        //adding a locker to avoid submitting mutiple requests until a response is returned
+        var processingReq = false;
+        
+        //initializing filters
+        var filters = {
+            hasPhoto: $('#hasPhoto').is(":checked"),
+            inContact: $('#inContact').is(":checked"),
+            favourite: $('#favourite').is(":checked"),
+            compatibilityScore: {
+                min: DEF_MIN_SCORE,
+                max: DEF_MAX_SCORE
+            },
+            age: {
+                min: DEF_MIN_AGE,
+                max: DEF_MAX_AGE
+            },
+            height: {
+                min: DEF_MIN_HEIGHT,
+                max: DEF_MAX_HEIGHT
+            },
+            distance: DEF_DISTANCE,
+        };
+        
+        //defining sliders
         $(function() {
             $("#compatibilityScoreRange").slider({
                 range: true,
                 min: 1,
                 max: 99,
-                values: [50, 99],
+                values: [DEF_MIN_SCORE, DEF_MAX_SCORE],
                 slide: function(event, ui) {
                     $("#compatibilityScore").val(ui.values[0] + "% - " + ui.values[1] + "%");
+                    filters.compatibilityScore.min = ui.values[0];
+                    filters.compatibilityScore.max = ui.values[1];
                 }
             });
             $("#compatibilityScore").val($("#compatibilityScoreRange").slider("values", 0) + "% - " + $("#compatibilityScoreRange").slider("values", 1) + "%");
@@ -18,10 +52,12 @@
                 range: true,
                 min: 18,
                 max: 96,
-                values: [18, 40],
+                values: [DEF_MIN_AGE, DEF_MAX_AGE],
                 slide: function(event, ui) {
                     var maxValue = ui.values[1] > 95 ? "95+" : ui.values[1];
                     $("#age").val(ui.values[0] + " - " + maxValue);
+                    filters.age.min = ui.values[0];
+                    filters.age.max = ui.values[1];
                 }
             });
             $("#age").val($("#ageRange").slider("values", 0) + " - " + $("#ageRange").slider("values", 1));
@@ -31,10 +67,12 @@
                 range: true,
                 min: 135,
                 max: 211,
-                values: [155, 175],
+                values: [DEF_MIN_HEIGHT, DEF_MAX_HEIGHT],
                 slide: function(event, ui) {
                     var maxValue = ui.values[1] > 210 ? "210+ " : ui.values[1];
                     $("#height").val(ui.values[0] + "cm - " + maxValue + "cm");
+                    filters.height.min = ui.values[0];
+                    filters.height.max = ui.values[1];
                 }
             });
             $("#height").val($("#heightRange").slider("values", 0) + "cm - " + $("#heightRange").slider("values", 1) + "cm");
@@ -42,26 +80,106 @@
         $(function() {
             $("#distanceMax").slider({
                 range: "min",
-                value: 100,
+                value: DEF_DISTANCE,
                 min: 30,
                 max: 301,
                 slide: function(event, ui) {
                     var value = ui.value > 300 ? ">300" : ui.value;
                     $("#distance").val(value + " km");
+                    filters.distance = ui.value;
                 }
             });
             $("#distance").val($("#distanceMax").slider("value") + " km");
         });
+        
+        //called upon clicking filter button to send async requests in order to update matches
+        function getFilteredData(){
+            if(processingReq){
+                return;
+            } else {
+                processingReq = true;
+            }
+            
+            // create a FormData object which will be sent as the data payload in the AJAX request
+            var formData = new FormData();
+            
+            filters.hasPhoto = $('#hasPhoto').is(":checked");
+            filters.inContact = $('#inContact').is(":checked");
+            filters.favourite = $('#favourite').is(":checked");
+        
+            // add current filters to formData object for the data payload
+            formData = {
+                'filters': filters
+            };
+            
+            console.log(formData);
+        
+            $.ajax({
+              url        : '/',
+              type       : 'POST',
+              data       : formData,
+              dataType   : 'json', // what type of data do we expect back from the server
+              encode     : true,
+              success: function(data){
+                  console.log('updated filters sent!\n');
+                  //console.log(data);
+              }
+            })
+                .done(function(data) {    // using the done promise callback
+                    console.log("response data:");
+                    console.log(data); 
+                    renderMatches(data.users);
+                    processingReq = false;
+                    // TODO handle errors and validation messages
+                })
+                .fail(function(data) {    // using the fail promise callback
+                    processingReq = false;
+                    
+                    // show any errors
+                    console.log(data);
+                });
+        }
+        
+        //TODO: DOM comparison
+        function renderMatches(filteredUsers){
+            var newContent = '';
+            for(var i=0; i<filteredUsers.length; i++){
+                var imgSrc = '';
+                if (filteredUsers[i].main_photo) {
+                    imgSrc = '<img src="' + filteredUsers[i].main_photo + '" class="img-responsive">';
+                } else {
+                    imgSrc = '<img src="/images/no_photo.jpg" class="img-responsive">';
+                }
+                newContent += 
+                    '<div class="col-lg-3 col-md-4 col-sm-6 col-xs-12 profile">' +
+                        '<div class="thumbnail">' +
+                            '<div class="img-box text-center">' +
+                                imgSrc +
+                                '<ul class="text-center">' +
+                                    '<a href="#"><li><i class="glyphicon glyphicon-user"></i></li></a>' +
+                                    '<a href="#"><li><i class="glyphicon glyphicon-heart"></i></li></a>' +
+                                    '<a href="#"><li><i class="glyphicon glyphicon-envelope"></i></li></a>' +
+                                '</ul>' +
+                            '</div>' +
+                            '<h1>' + filteredUsers[i].display_name + ', ' + filteredUsers[i].age + '</h1>' +
+                            '<h2>' + filteredUsers[i].religion + '</h2>' +
+                            '<h2>' + filteredUsers[i].job_title + ' - ' + filteredUsers[i].city.name + '</h2>' +
+                            '<p>Match: ' + filteredUsers[i].compatibility_score * 100 + '%</p>' +
+                        '</div>' +
+                    '</div>';
+            }
+            $('#usersContainer').html(newContent);
+        }
     </script>
     
     <header class="jumbotron">
         <div class="container">
             <p>Get your best matches!</p>
-            <form action="/" method="POST">
+            
                 <div class="row" style="display:flex; flex-wrap: wrap;">
                     <div class="col-sm-4 col-xs-12">
                         <div class="form-group">
-                            <button class="btn btn-lg btn-primary btn-block">Filter!</button>
+                            <button class="btn btn-lg btn-primary btn-block" onclick="getFilteredData()">Filter!</button>
                         </div>
                         
                         <div class="checkbox">
@@ -100,12 +218,14 @@
                         </div>
                     </div>
                 </div>
-            </form>
             
         </div>
+        
+        <!-- TODO: sorting options -->
+        <!-- TODO: implement lazy-loading mechanism -->
     </header>
      
-    <div class="row text-center" style="display:flex; flex-wrap: wrap;">
+    <div id="usersContainer" class="row text-center" style="display:flex; flex-wrap: wrap;">
         <% users.forEach(function(user){ %>
             <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12 profile">
                 <div class="thumbnail">
@@ -116,7 +236,7 @@
                             <img src="/images/no_photo.jpg" class="img-responsive">
                         <% } %>
                         <ul class="text-center">
-                            <a href="/users/<%= user._id %>"><li><i class="glyphicon glyphicon-user"></i></li></a>
+                            <a href="#"><li><i class="glyphicon glyphicon-user"></i></li></a>
                             <a href="#"><li><i class="glyphicon glyphicon-heart"></i></li></a>
                             <a href="#"><li><i class="glyphicon glyphicon-envelope"></i></li></a>
                         </ul>
