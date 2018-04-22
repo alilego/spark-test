@@ -30,6 +30,7 @@
     alilego:~/workspace $ cd spark-test/
     alilego:~/workspace/spark-test (master) $ npm install
     alilego:~/workspace/spark-test (master) $ node public/seed.js
+    alilego:~/workspace/spark-test (master) $ node index.js
     ```
     - test app:
         - click on "Preview" top button, then click "Open the App" red button on the opened browser tab
