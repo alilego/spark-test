@@ -1,12 +1,12 @@
 var mongoose = require("mongoose");
 
 var userSchema = new mongoose.Schema({
-    display_name: String,
-    age: String,
-    job_title: String,
-    height_in_cm: Number,
+    display_name: { type: String, required: true },
+    age: { type: String, required: true },
+    job_title: { type: String, required: true },
+    height_in_cm: { type: Number, required: true },
     city: {
-        name: String,
+        name: { type: String, required: true },
         lat: Number,
         lon: Number
     },
@@ -15,7 +15,7 @@ var userSchema = new mongoose.Schema({
         index: '2d'
     },
     main_photo: String,
-    compatibility_score: Number,
+    compatibility_score: { type: Number, required: true },
     contacts_exchanged: Number,
     favourite: Boolean,
     religion: String

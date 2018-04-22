@@ -2,99 +2,41 @@ var express     = require("express"),
     app         = express(),
     bodyParser  = require("body-parser"),
     mongoose    = require("mongoose"),
-    log         = require('console-log-level')({ level: 'debug' }),
+//    morgan      = require('morgan'),
+    log         = require('console-log-level')({ level: 'info' }),
     User        = require("./models/user"),
-    DB          = require("./test/initDB");
+    DB          = require("./public/initDB");
 
-const MIN_AGE = 18;
-const MAX_AGE = 95;
-const MIN_HEIGHT = 135;
-const MAX_HEIGHT = 210;
-const MAX_DISTANCE = 300;
+const config    = require("./config/default");
 
-mongoose.connect("mongodb://localhost/spark_match");
+var options = { 
+                server: { socketOptions: { keepAlive: 1, connectTimeoutMS: 30000 } }, 
+                replset: { socketOptions: { keepAlive: 1, connectTimeoutMS : 30000 } } 
+              };
 
-app.use(bodyParser.urlencoded({extended: true}));
+mongoose.connect(config.DBHost, options);
+var db = mongoose.connection;
+    db.on('error', console.error.bind(console, 'connection error:'));
+    
+// //don't show the log when it is test
+// if(config.util.getEnv('NODE_ENV') !== 'test') {
+//     //use morgan to log at command line
+//     app.use(morgan('combined')); //'combined' outputs the Apache style LOGs
+// }
+
+app.use(bodyParser.json());                                     
+app.use(bodyParser.urlencoded({extended: true}));               
 app.set("view engine", "ejs");
 app.use(express.static(__dirname + "/public"));
 
-//assumption: this is the logged in user
-const currentUser = {
-    name: "Vladimir",
-    city: {
-        "name": "London",
-        "lat": 51.509865,
-        "lon": -0.118092
-      },
-    religion: "Christian"  
-}
+app.use("/", require("./routes/match"));
 
+//use init operation to initialize DB with test data
 //DB.initUsers(User, log);
 //DB.clearAllUsers(User, log);
-
-//INDEX - show all matches    
-app.get("/", function(req, res){
-    // Get all matches from DB
-    User.find({}, function(err, allUsers){
-        if(err){
-            log.error(err);
-        } else {
-            log.debug("Rendering index.ejs (all users) on '/' path");
-            res.render("index", {users:allUsers});
-        }
-    });
-});
-
-app.post('/', function(req, res){
-	log.debug("'/' POST request");
-	log.debug('Filters:');
-	log.debug(req.body.filters);
-	
-	//build query based on provided filters
-	var query = {
-	    compatibility_score: { $gte: Number(req.body.filters.compatibilityScore.min/100), $lte: Number(req.body.filters.compatibilityScore.max/100) },
-	    age: { $gte: Number(req.body.filters.age.min), $lte: Number(req.body.filters.age.max) },
-	    height_in_cm: { $gte: Number(req.body.filters.height.min), $lte: Number(req.body.filters.height.max) },
-	};
-	
-	if(req.body.filters.favourite == 'true'){
-	    query.favourite = true;
-	}
-	if(req.body.filters.hasPhoto == 'true'){
-	    query.main_photo = { $exists: true };
-	}
-	if(req.body.filters.inContact == 'true'){
-	    query.contacts_exchanged = { $gt: 0 };
-	}
-	var distance = Number(req.body.filters.distance);
-	if(distance <= MAX_DISTANCE){
-	    var coords = [currentUser.city.lon, currentUser.city.lat];
-	    query.geo = {
-	        $nearSphere: coords,
-	        $maxDistance: distance/6371          
-	    }
-	}
-	
-	log.debug('DB query:');
-	log.debug(query);
-
-	User.
-        find(query).
-        limit(100).
-        sort({ compatibility_score: -1 }).
-        exec(function(err, allUsers){
-            if(err){
-                log.error(err);
-            } else {
-                log.info("Returning filtered users");
-                log.debug(allUsers);
-                res.send({users:allUsers});
-            }
-        });
-	
-	//res.send({});
-});
 
 app.listen(process.env.PORT, process.env.IP, function(){
    log.info("Spark Matching server has started!");
 });
+
+module.exports = app; // for testing
