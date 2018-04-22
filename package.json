@@ -13,7 +13,7 @@
     "filtering"
   ],
   "author": "Vladimir Ioana",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "body-parser": "^1.14.1",
     "ejs": "^2.3.4",

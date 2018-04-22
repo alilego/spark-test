@@ -2,7 +2,6 @@ var express     = require("express"),
     app         = express(),
     bodyParser  = require("body-parser"),
     mongoose    = require("mongoose"),
-//    morgan      = require('morgan'),
     log         = require('console-log-level')({ level: 'info' }),
     User        = require("./models/user"),
     DB          = require("./public/initDB");

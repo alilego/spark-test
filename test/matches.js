@@ -181,7 +181,6 @@ describe('DB with test data', () => {
         });
         
         it('it should retrieve matches within limited range', (done) => {
-        //TODO: add proper test for distance
             let filters = {
                 hasPhoto: 'false',
                 inContact: 'false',
