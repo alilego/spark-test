@@ -34,7 +34,7 @@
     - test app:
         - click on "Preview" top button, then click "Open the App" red button on the opened browser tab
         - test app (same URI can be opened in an independent browser)
-
+* Upon exit, terminate both mongod and node instance (as workspace instance may shutdown til next login => state/config issues)
 
 
 # Run app
